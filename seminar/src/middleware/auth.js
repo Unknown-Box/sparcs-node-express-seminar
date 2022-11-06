@@ -1,5 +1,18 @@
+/**
+ * uid/upwd - user transmitted id/pwd
+ * rid/rpwd - server registered id/pwd
+ */
+
 const authMiddleware = (req, res, next) => {
-    if (req.body.credential === process.env.API_KEY) {
+  var { uid, upwd } = {
+    uid: req.body.id, 
+    upwd: req.body.pwd
+  };
+  var { rid, rpwd } = {
+    rid: process.env.ID, 
+    rpwd: process.env.PASSWORD
+  };
+    if (uid === rid && upwd === rpwd) {
         console.log("[AUTH-MIDDLEWARE] Authorized User");
         next();
     }

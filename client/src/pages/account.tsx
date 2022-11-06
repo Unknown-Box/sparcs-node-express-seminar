@@ -8,11 +8,13 @@ const AccountPage = () => {
   const [ SAPIKEY, setSAPIKEY ] = React.useState<string>("");
   const [ NBalance, setNBalance ] = React.useState<number | "Not Authorized">("Not Authorized");
   const [ NTransaction, setNTransaction ] = React.useState<number | ''>(0);
+  const [ userId, setUserId ] = React.useState<string>("");
+  const [ userPassword, setUserPassword ] = React.useState<string>("");
 
   const getAccountInformation = () => {
     const asyncFun = async() => {
       interface IAPIResponse { balance: number };
-      const { data } = await axios.post<IAPIResponse>(SAPIBase + '/account/getInfo', { credential: SAPIKEY });
+      const { data } = await axios.post<IAPIResponse>(SAPIBase + '/account/getInfo', { id: userId, pwd: userPassword });
       setNBalance(data.balance);
     }
     asyncFun().catch((e) => window.alert(`AN ERROR OCCURED: ${e}`));
@@ -22,7 +24,7 @@ const AccountPage = () => {
     const asyncFun = async() => {
       if (amount === '') return;
       interface IAPIResponse { success: boolean, balance: number, msg: string };
-      const { data } = await axios.post<IAPIResponse>(SAPIBase + '/account/transaction', { credential: SAPIKEY, amount: amount });
+      const { data } = await axios.post<IAPIResponse>(SAPIBase + '/account/transaction', { id: userId, pwd: userPassword, amount: amount });
       setNTransaction(0);
       if (!data.success) {
         window.alert('Transaction Failed:' + data.msg);
@@ -35,12 +37,24 @@ const AccountPage = () => {
     asyncFun().catch((e) => window.alert(`AN ERROR OCCURED: ${e}`));
   }
 
+  const setUserPasswordWrapper = async (plainPW: string) => {
+    var passwordBuffer = new TextEncoder().encode(plainPW);
+    var SHA256Buffer = await crypto.subtle.digest('SHA-256', passwordBuffer);
+    var hashArray = Array.from(new Uint8Array(SHA256Buffer));
+    var hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    setUserPassword(hashHex);
+  }
+
   return (
     <div className={"account"}>
       <Header/>
       <h2>Account</h2>
       <div className={"account-token-input"}>
-        Enter API Key: <input type={"text"} value={SAPIKEY} onChange={e => setSAPIKEY(e.target.value)}/>
+        <label htmlFor="user-id">Enter ID</label>
+        <input type="text" id="user-id" name="user-id" onChange={e => setUserId(e.target.value)} />
+        <label htmlFor="user-id">Enter Password</label>
+        <input type="password" id="user-pw" name="user-pw" onChange={e => setUserPasswordWrapper(e.target.value)} />
         <button onClick={e => getAccountInformation()}>GET</button>
       </div>
       <div className={"account-bank"}>
