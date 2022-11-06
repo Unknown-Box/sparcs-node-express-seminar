@@ -30,6 +30,19 @@
     font-weight: 700;
 }
 
+.update-item {
+  position: absolute;
+  right: 40px;
+  top: 12px;
+  color: black;
+  font-size: 18px;
+}
+
+.update-item:hover {
+  font-weight: bold;
+  cursor: pointer;
+}
+
 .delete-item {
     position: absolute;
     right: 15px;

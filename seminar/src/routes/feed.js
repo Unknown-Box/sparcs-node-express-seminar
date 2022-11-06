@@ -26,6 +26,22 @@ class FeedDB {
         return true;
     }
 
+    updateItem = ( id, item ) => {
+      var updateCount = 0;
+      const { title, content } = item;
+      this.#LDataDB = this.#LDataDB.map(data => {
+        if (id === data.id.toString()) {
+          updateCount++;
+          return { 
+            id: data.id, 
+            title: title ?? data.title, 
+            content: content ?? data.content 
+          }
+        } else return data;
+      })
+      return updateCount;
+    }
+
     deleteItem = ( id ) => {
         let BItemDeleted = false;
         this.#LDataDB = this.#LDataDB.filter((value) => {
@@ -36,11 +52,14 @@ class FeedDB {
         if (BItemDeleted) id--;
         return BItemDeleted;
     }
+
+    getList() {return this.#LDataDB;}
 }
 
 const feedDBInst = FeedDB.getInst();
 
 router.get('/getFeed', (req, res) => {
+  console.log(feedDBInst.getList());
     try {
         const requestCount = parseInt(req.query.count);
         const dbRes = feedDBInst.selectItems(requestCount);
@@ -52,6 +71,7 @@ router.get('/getFeed', (req, res) => {
 });
 
 router.post('/addFeed', (req, res) => {
+  console.log(feedDBInst.getList());
    try {
        const { title, content } = req.body;
        const addResult = feedDBInst.insertItem({ title, content });
@@ -62,8 +82,22 @@ router.post('/addFeed', (req, res) => {
    }
 });
 
+router.post('/updateFeed', (req, res) => {
+  console.log(req.body)
+  console.log(feedDBInst.getList());
+  try {
+    const { id, title, content } = req.body;
+    const updateResult = feedDBInst.updateItem(id, {title, content});
+    if (!updateResult) return res.status(500).json({ error: 'No item updated' })
+    else return res.status(200).json({ isOK: true })
+  } catch (e) {
+    return res.status(500).json({ error: e })
+  }
+})
+
 router.post('/deleteFeed', (req, res) => {
-    try {
+  console.log(feedDBInst.getList());
+  try {
         const { id } = req.body;
         const deleteResult = feedDBInst.deleteItem(parseInt(id));
         if (!deleteResult) return res.status(500).json({ error: "No item deleted" })

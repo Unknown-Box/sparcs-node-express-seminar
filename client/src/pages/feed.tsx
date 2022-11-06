@@ -4,6 +4,12 @@ import { SAPIBase } from "../tools/api";
 import Header from "../components/header";
 import "./css/feed.css";
 
+type FeedProps = {
+  id: number,
+  title: string, 
+  content: string
+}
+
 interface IAPIResponse  { id: number, title: string, content: string }
 
 const FeedPage = (props: {}) => {
@@ -11,6 +17,7 @@ const FeedPage = (props: {}) => {
   const [ NPostCount, setNPostCount ] = React.useState<number>(0);
   const [ SNewPostTitle, setSNewPostTitle ] = React.useState<string>("");
   const [ SNewPostContent, setSNewPostContent ] = React.useState<string>("");
+  const [ modifiableFeedId, setModifiableFeedId ] = React.useState<number>(-1);
 
   React.useEffect( () => {
     let BComponentExited = false;
@@ -23,7 +30,7 @@ const FeedPage = (props: {}) => {
     };
     asyncFun().catch((e) => window.alert(`Error while running API Call: ${e}`));
     return () => { BComponentExited = true; }
-  }, [ NPostCount ]);
+  }, [ NPostCount, modifiableFeedId]);
 
   const createNewPost = () => {
     const asyncFun = async () => {
@@ -35,6 +42,15 @@ const FeedPage = (props: {}) => {
     asyncFun().catch(e => window.alert(`AN ERROR OCCURED! ${e}`));
   }
 
+  const updatePost = (id: string) => {
+    (async () => {
+      const title = document.querySelector(`#feed-${id} > h3`)?.innerHTML;
+      const content = document.querySelector(`#feed-${id} > p`)?.innerHTML;
+      await axios.post( SAPIBase + '/feed/updateFeed', { id, title, content } );
+    })().then(() => { setModifiableFeedId(-1); })
+        .catch(e => window.alert(`AN ERROR OCCURED! ${JSON.stringify(e)}`));
+  }
+
   const deletePost = (id: string) => {
     const asyncFun = async () => {
       // One can set X-HTTP-Method header to DELETE to specify deletion as well
@@ -42,6 +58,28 @@ const FeedPage = (props: {}) => {
       setNPostCount(Math.max(NPostCount - 1, 0));
     }
     asyncFun().catch(e => window.alert(`AN ERROR OCCURED! ${e}`));
+  }
+
+  const ReadonlyFeed = ({ id, title, content }: FeedProps) => {
+    return (
+      <div className={"feed-item"} id={`feed-${id}`}>
+        <div className={"update-item"} onClick={(e) => setModifiableFeedId(id)}>✎</div>
+        <div className={"delete-item"} onClick={(e) => deletePost(`${id}`)}>ⓧ</div>
+        <h3 className={"feed-title"}>{ title }</h3>
+        <p className={"feed-body"}>{ content }</p>
+      </div>
+    );
+  }
+  
+  const ModifiableFeed = ({ id, title, content }: FeedProps) => {
+    return (
+      <div className={"feed-item"} id={`feed-${id}`}>
+        <div className={"update-item"} onClick={(e) => updatePost(`${id}`)}>✓</div>
+        <div className={"delete-item"} onClick={(e) => setModifiableFeedId(-1)}>ⓧ</div>
+        <h3 className={"feed-title"} contentEditable="true">{ title }</h3>
+        <p className={"feed-body"} contentEditable="true">{ content }</p>
+      </div>
+    );
   }
 
   return (
@@ -55,13 +93,7 @@ const FeedPage = (props: {}) => {
         />
       </div>
       <div className={"feed-list"}>
-        { LAPIResponse.map( (val, i) =>
-          <div key={i} className={"feed-item"}>
-            <div className={"delete-item"} onClick={(e) => deletePost(`${val.id}`)}>ⓧ</div>
-            <h3 className={"feed-title"}>{ val.title }</h3>
-            <p className={"feed-body"}>{ val.content }</p>
-          </div>
-        ) }
+        { LAPIResponse.map( ({ id, title, content }, i) => id === modifiableFeedId ? <ModifiableFeed key={i} id={id} title={title} content={content}></ModifiableFeed> : <ReadonlyFeed key={i} id={id} title={title} content={content}></ReadonlyFeed>) }
         <div className={"feed-item-add"}>
           Title: <input type={"text"} value={SNewPostTitle} onChange={(e) => setSNewPostTitle(e.target.value)}/>
           &nbsp;&nbsp;&nbsp;&nbsp;
