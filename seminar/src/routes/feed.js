@@ -44,6 +44,19 @@ class FeedDB {
         }
     }
 
+    updateItem = async ( id, item ) => {
+        const { title, content } = item;
+        try {
+            const result = await FeedModel.updateOne({ _id: id }, 
+                                                     { '$set': { title, content } });
+
+            return result.nModified === 1;
+        } catch (e) {
+            console.log(`[Feed-DB] Update Error: ${e}`);
+            return false;
+        }
+    }
+
     deleteItem = async ( id ) => {
         try {
             const ODeleteFiler = { _id: id };
@@ -79,6 +92,18 @@ router.post('/addFeed', async (req, res) => {
    } catch (e) {
        return res.status(500).json({ error: e });
    }
+});
+
+router.post('/updateFeed', async (req, res) => {
+    try {
+        const { id, title, content } = req.body;
+        const updateResult = await feedDBInst.updateItem(id, { title, content });
+
+        if (!updateResult) return res.status(500).json({ error: 'No item updated' });
+        else return res.status(200).json({ isOK: true });
+    } catch (e) {
+        return res.status(500).json({ error: e });
+    }
 });
 
 router.post('/deleteFeed', async (req, res) => {
